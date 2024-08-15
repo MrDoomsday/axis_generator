@@ -21,48 +21,44 @@ module lfsr_generator #(
         output logic    [31:0]              pkt_pause_o
 
     );
-    
-    
+
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
+/*******************************************            DECLARATION      ***********************************************/
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
+
     (* keep *) logic [511:0] lfsr_0;
     (* keep *) logic [511:0] lfsr_1;
     
     
-    function logic [15:0] get_thermo_left_x16(logic [15:0] vector);
-        logic [15:0] result;
-        result = 16'hFFFF;        
-        for(int i = 15; i > -1; i--) begin
-            if(vector[i]) begin
-                result >>= (15-i);
-                return result;
-            end
-        end
-        return 16'hFFFF;
+    function bit [DATA_WIDTH-1:0] mixed_data (bit [511:0] data_0, bit [511:0] data_1);
+        bit [DATA_WIDTH-1:0] result;
+        for(int i = 0; i < DATA_WIDTH; i++) result[i] = data_0[i] ^ data_1[(i+256)%512];
+        return result;
     endfunction
+        
 
-    function logic [31:0] get_thermo_left_x32(logic [31:0] vector);
-        logic [31:0] result;
-        result = 32'hFFFFFFFF;
-        for(int i = 31; i > -1; i--) begin
-            if(vector[i]) begin
-                result >>= (31-i);
-                return result;
-            end
-        end
-        return 32'hFFFFFFFF;
-    endfunction
 
-    function logic [ID_WIDTH-1:0] get_thermo_left_xN(logic [ID_WIDTH-1:0] vector);
-        logic [ID_WIDTH-1:0] result;
-        result = {ID_WIDTH{1'b1}};
-        for(int i = ID_WIDTH-1; i > -1; i--) begin
-            if(vector[i]) begin
-                result >>= (ID_WIDTH-1-i);
-                return result;
-            end
-        end
-        return {ID_WIDTH{1'b1}};
-    endfunction
+    bit    [15:0][15:0]       pkt_length_prepare;
+    bit    [ID_WIDTH-1:0]     pkt_channel_prepare;
+    bit    [31:0]             pkt_pause_prepare;
 
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
+/*******************************************            INSTANCE         ***********************************************/
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
+
+    utils #(.W(16))         utils_length  ();
+    utils #(.W(ID_WIDTH))   utils_channel ();
+    utils #(.W(32))         utils_pause   ();
+    
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
+/*******************************************            LOGIC            ***********************************************/
+/***********************************************************************************************************************/
+/***********************************************************************************************************************/
 
     //период данного регистра оценивается в 2^512 (отводы брались из статьи)
     /*
@@ -103,29 +99,10 @@ module lfsr_generator #(
         end
     end
 
-    
-    function bit [DATA_WIDTH-1:0] mixed_data (bit [511:0] data_0, bit [511:0] data_1);
-        bit [DATA_WIDTH-1:0] result;
-        for(int i = 0; i < DATA_WIDTH; i++) result[i] = data_0[i] ^ data_1[(i+256)%512];
-        return result;
-    endfunction
-        
 
-
-    bit    [15:0][15:0]       pkt_length_prepare;
-    bit    [ID_WIDTH-1:0]     pkt_channel_prepare;
-    bit    [31:0]             pkt_pause_prepare;
 
     assign lfsr_out_o = lfsr_0 ^ lfsr_1;
     assign pkt_data_o = mixed_data(lfsr_0, lfsr_1);
-
-
-    always_ff @ (posedge clk) begin
-        for(int i = 0; i < 16; i++) begin
-
-        end
-    end
-
 
 
     always_ff @ (posedge clk) begin
@@ -136,9 +113,9 @@ module lfsr_generator #(
     end
 
     always_ff @ (posedge clk) begin
-        pkt_length_o  <= pkt_length_prepare     &   get_thermo_left_x16(cntrl_max_length_i);//маскируем старшие биты, которые дадут нам заведомо превосходящую заданный диапазон длину
-        pkt_channel_o <= pkt_channel_prepare    &   get_thermo_left_xN(cntrl_max_channel_i);
-        pkt_pause_o   <= pkt_pause_prepare      &   get_thermo_left_x32(cntrl_max_pause_i);
+        pkt_length_o  <= pkt_length_prepare     &   utils_length.get_thermo_left(cntrl_max_length_i);//маскируем старшие биты, которые дадут нам заведомо превосходящую заданный диапазон длину
+        pkt_channel_o <= pkt_channel_prepare    &   utils_length.get_thermo_left(cntrl_max_channel_i);
+        pkt_pause_o   <= pkt_pause_prepare      &   utils_length.get_thermo_left(cntrl_max_pause_i);
     end
 
     endmodule 
