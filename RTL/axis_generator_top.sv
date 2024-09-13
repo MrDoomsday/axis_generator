@@ -110,7 +110,7 @@ module axis_generator_top #(
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
 
-    axil_to_reg #(
+    genaxis_axil_to_reg #(
         .ID_WIDTH(ID_WIDTH)
     ) axil_to_reg_inst (
         .clk                            (clk),
@@ -163,7 +163,7 @@ module axis_generator_top #(
 
 
 
-    lfsr_generator #(
+    genaxis_lfsr_generator #(
         .ID_WIDTH   (ID_WIDTH),
         .DATA_WIDTH (DATA_WIDTH)
     ) lfsr_generator_inst (
@@ -187,7 +187,7 @@ module axis_generator_top #(
     );
 
 
-    generator_descriptor #(
+    genaxis_generator_descriptor #(
         .ID_WIDTH(ID_WIDTH)
     ) generator_descriptor_inst (
         .clk                            (clk),
@@ -229,7 +229,7 @@ module axis_generator_top #(
     );
 
 
-    axis_fifo #(
+    genaxis_axis_fifo #(
         .T_DATA_WIDTH(48+ID_WIDTH),
         .SIZE(2048)
     ) descriptor_buffer_inst (
@@ -250,7 +250,7 @@ module axis_generator_top #(
         .fifo_full_o    ()
     );
 
-    descriptor_to_axis #(
+    genaxis_descriptor_to_axis #(
         .ID_WIDTH   (ID_WIDTH),
         .DATA_WIDTH (DATA_WIDTH)
     ) descriptor_to_axis_inst (

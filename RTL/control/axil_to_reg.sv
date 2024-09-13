@@ -19,7 +19,7 @@
     0x9 - MAXIMUM PAUSE, 32 bit
     0xA - COUNT PACKET, 32 bit,
 */
-module axil_to_reg #(
+module genaxis_axil_to_reg #(
     parameter ID_WIDTH = 10
 )(
     input bit clk,
@@ -108,7 +108,7 @@ module axil_to_reg #(
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
 
-    axil_reg_if #
+    genaxis_axil_reg_if #
     (
         // Width of data bus in bits
         .DATA_WIDTH(32),
