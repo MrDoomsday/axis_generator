@@ -34,7 +34,7 @@ module genaxis_lfsr_generator #(
     
     function bit [DATA_WIDTH-1:0] mixed_data (bit [511:0] data_0, bit [511:0] data_1);
         bit [DATA_WIDTH-1:0] result;
-        for(int i = 0; i < DATA_WIDTH; i++) result[i] = data_0[i] ^ data_1[(i+256)%512];
+        for(int i = 0; i < DATA_WIDTH; i++) result[i] = data_0[i] ^ data_1[DATA_WIDTH-1-i];
         return result;
     endfunction
         
@@ -43,7 +43,7 @@ module genaxis_lfsr_generator #(
     bit    [15:0]               pkt_length_prepare, pkt_length_thermo;
     bit    [ID_WIDTH-1:0]       pkt_channel_prepare, pkt_channel_thermo;
     bit    [31:0]               pkt_pause_prepare, pkt_pause_thermo;
-
+    bit    [31:0]               pkt_channel_max;
 
 
 /***********************************************************************************************************************/
@@ -86,7 +86,7 @@ module genaxis_lfsr_generator #(
     end
 
     always_ff @ (posedge clk or negedge reset_n) begin
-        if(!reset_n) lfsr_1 <= 512'h10;
+        if(!reset_n) lfsr_1 <= 512'hFFFFFFFFFFFFFFFFF10101010101010101010011111010101010;
         else begin 
             lfsr_1[511] <= lfsr_1[0];
             lfsr_1[510] <= lfsr_1[511];
@@ -106,12 +106,65 @@ module genaxis_lfsr_generator #(
     assign lfsr_out_o = lfsr_0 ^ lfsr_1;
     assign pkt_data_o = mixed_data(lfsr_0, lfsr_1);
 
+    assign pkt_channel_max = {  lfsr_0[12]  ^ lfsr_1[25], lfsr_0[128] ^ lfsr_1[121], //[15]
+                                lfsr_0[198] ^ lfsr_1[21], lfsr_0[120] ^ lfsr_1[118], //[14]
+                                lfsr_0[199] ^ lfsr_1[89], lfsr_0[113] ^ lfsr_1[19],  //[13]
+                                lfsr_0[9]   ^ lfsr_1[12], lfsr_0[199] ^ lfsr_1[112], //[12]
+                                lfsr_0[3]   ^ lfsr_1[197],lfsr_0[96]  ^ lfsr_1[190], //[11]
+                                lfsr_0[1]   ^ lfsr_1[65], lfsr_0[85]  ^ lfsr_1[182], //[10]
+                                lfsr_0[2]   ^ lfsr_1[234],lfsr_0[80]  ^ lfsr_1[172], //[9]
+                                lfsr_0[297] ^ lfsr_1[76], lfsr_0[79]  ^ lfsr_1[166], //[8]
+                                lfsr_0[477] ^ lfsr_1[18], lfsr_0[63]  ^ lfsr_1[151], //[7]
+                                lfsr_0[410] ^ lfsr_1[24], lfsr_0[54]  ^ lfsr_1[150], //[6]
+                                lfsr_0[359] ^ lfsr_1[5],  lfsr_0[46]  ^ lfsr_1[400], //[5]
+                                lfsr_0[415] ^ lfsr_1[38], lfsr_0[40]  ^ lfsr_1[360], //[4]
+                                lfsr_0[501] ^ lfsr_1[86], lfsr_0[311] ^ lfsr_1[280], //[3]
+                                lfsr_0[187] ^ lfsr_1[7],  lfsr_0[203] ^ lfsr_1[220], //[2]
+                                lfsr_0[378] ^ lfsr_1[39], lfsr_0[105] ^ lfsr_1[120], //[1]
+                                lfsr_0[399] ^ lfsr_1[19], lfsr_0[70]  ^ lfsr_1[20]   //[0]
+                            };
+    
 
     always_ff @ (posedge clk) begin
-        pkt_length_prepare   <= { lfsr_0[128] ^ lfsr_1[128], lfsr_0[120] ^ lfsr_1[119], lfsr_0[112] ^ lfsr_1[110], lfsr_0[104] ^ lfsr_1[101], lfsr_0[96] ^ lfsr_1[91], lfsr_0[88] ^ lfsr_1[83], lfsr_0[80] ^ lfsr_1[73], lfsr_0[72] ^ lfsr_1[67], 
-                                lfsr_0[64] ^ lfsr_1[53], lfsr_0[56] ^ lfsr_1[55], lfsr_0[48] ^ lfsr_1[41], lfsr_0[40] ^ lfsr_1[37], lfsr_0[32] ^ lfsr_1[29], lfsr_0[24] ^ lfsr_1[23], lfsr_0[16] ^ lfsr_1[13], lfsr_0[8] ^ lfsr_1[3]};
-        pkt_channel_prepare  <= lfsr_0[384+:ID_WIDTH] ^ lfsr_1[384+:ID_WIDTH];
-        pkt_pause_prepare    <= lfsr_0[415:384] ^ lfsr_1[415:384];
+        pkt_length_prepare   <= { lfsr_0[128] ^ lfsr_1[500], //[15]
+                                  lfsr_0[120] ^ lfsr_1[350], //[14]
+                                  lfsr_0[112] ^ lfsr_1[390], //[13]
+                                  lfsr_0[104] ^ lfsr_1[101], //[12]
+                                  lfsr_0[96] ^ lfsr_1[80],   //[11]
+                                  lfsr_0[88] ^ lfsr_1[250],   //[10]
+                                  lfsr_0[80] ^ lfsr_1[302],   //[9]
+                                  lfsr_0[72] ^ lfsr_1[187],   //[8]
+                                  lfsr_0[64] ^ lfsr_1[17],   //[7]
+                                  lfsr_0[56] ^ lfsr_1[67],   //[6]
+                                  lfsr_0[48] ^ lfsr_1[81],   //[5]
+                                  lfsr_0[40] ^ lfsr_1[189],   //[4]
+                                  lfsr_0[32] ^ lfsr_1[367],   //[3]
+                                  lfsr_0[24] ^ lfsr_1[234],   //[2]
+                                  lfsr_0[16] ^ lfsr_1[499],   //[1]
+                                  lfsr_0[8] ^ lfsr_1[222]      //[0]
+                                };
+
+        //предусмотреть рандомизацию канала
+        pkt_channel_prepare  <= pkt_channel_max[ID_WIDTH-1:0];//мы забираем столько, сколько требует ширина канала
+
+
+        pkt_pause_prepare    <= { lfsr_0[256] ^ lfsr_1[256], lfsr_0[127] ^ lfsr_1[127], //[15]
+                                  lfsr_0[230] ^ lfsr_1[211], lfsr_0[119] ^ lfsr_1[118], //[14]
+                                  lfsr_0[199] ^ lfsr_1[89],  lfsr_0[111] ^ lfsr_1[109], //[13]
+                                  lfsr_0[99]  ^ lfsr_1[12],  lfsr_0[103] ^ lfsr_1[100], //[12]
+                                  lfsr_0[31]  ^ lfsr_1[197], lfsr_0[95]  ^ lfsr_1[90],  //[11]
+                                  lfsr_0[17]  ^ lfsr_1[65],  lfsr_0[84]  ^ lfsr_1[82],  //[10]
+                                  lfsr_0[2]   ^ lfsr_1[234], lfsr_0[79]  ^ lfsr_1[72],  //[9]
+                                  lfsr_0[286] ^ lfsr_1[76],  lfsr_0[78]  ^ lfsr_1[66],  //[8]
+                                  lfsr_0[237] ^ lfsr_1[182], lfsr_0[63]  ^ lfsr_1[52],  //[7]
+                                  lfsr_0[382] ^ lfsr_1[245], lfsr_0[55]  ^ lfsr_1[54],  //[6]
+                                  lfsr_0[28]  ^ lfsr_1[55],  lfsr_0[47]  ^ lfsr_1[40],  //[5]
+                                  lfsr_0[10]  ^ lfsr_1[387], lfsr_0[39]  ^ lfsr_1[36],  //[4]
+                                  lfsr_0[94]  ^ lfsr_1[86],  lfsr_0[31]  ^ lfsr_1[28],  //[3]
+                                  lfsr_0[39]  ^ lfsr_1[70],  lfsr_0[23]  ^ lfsr_1[22],  //[2]
+                                  lfsr_0[148] ^ lfsr_1[35],  lfsr_0[15]  ^ lfsr_1[12],  //[1]
+                                  lfsr_0[123] ^ lfsr_1[17],  lfsr_0[7]   ^ lfsr_1[2]    //[0]
+                                };
     end
 
     always_ff @ (posedge clk) begin
