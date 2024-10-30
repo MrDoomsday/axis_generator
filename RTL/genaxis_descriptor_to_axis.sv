@@ -96,7 +96,7 @@ module genaxis_descriptor_to_axis #(
         endcase
     end
 
-    wire [2*TKEEP_WIDTH-1:0] tkeep_next = {{TKEEP_WIDTH{1'b1}}, {TKEEP_WIDTH{1'b0}}} >> packet_length[$clog2(TKEEP_WIDTH):0];//выдвигаем только количество единиц равное количеству оставшихся байт в пакете
+    wire [2*TKEEP_WIDTH-1:0] tkeep_next = {{TKEEP_WIDTH{1'b0}}, {TKEEP_WIDTH{1'b1}}} << packet_length[$clog2(TKEEP_WIDTH):0];//выдвигаем только количество единиц равное количеству оставшихся байт в пакете
 
     always_ff @ (posedge clk) begin
         if((state == IDLE) && in_descriptor_valid_i) packet_length <= in_descriptor_data_i[15:0];//длина пакета, который необходимо сгенерировать
@@ -123,7 +123,7 @@ module genaxis_descriptor_to_axis #(
             m_axis_tid_o    <= packet_channel;
             m_axis_tdata_o  <= psrand_data_i;
             m_axis_tlast_o  <= tlast_next;
-            m_axis_tkeep_o  <= tlast_next ? tkeep_next[TKEEP_WIDTH-1:0] : {TKEEP_WIDTH{1'b1}};//по умолчанию они все валидные
+            m_axis_tkeep_o  <= tlast_next ? tkeep_next[2*TKEEP_WIDTH-1:TKEEP_WIDTH] : {TKEEP_WIDTH{1'b1}};//по умолчанию они все валидные
         end
     end
 
