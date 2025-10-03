@@ -1,0 +1,8 @@
+*.qdb
+*.qtl
+*.qpg
+*.wlf
+*.mti
+*.mpf
+work/
+*transcript*
