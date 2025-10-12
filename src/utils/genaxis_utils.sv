@@ -8,14 +8,11 @@ module genaxis_utils #(
 
     function logic [W-1:0] get_thermo_left(logic [W-1:0] vector);
         logic [W-1:0] result;
-        result = {W{1'b1}};        
-        for(int i = W-1; i > -1; i--) begin
-            if(vector[i]) begin
-                result >>= (W-1-i);
-                return result;
-            end
+        result[W-1] = vector[W-1];        
+        for(int i = W-2; i > -1; i--) begin
+            result[i] = vector[i] | result[i+1];
         end
-        return {W{1'b1}};
+        return result;
     endfunction
 
     assign out = get_thermo_left(in);

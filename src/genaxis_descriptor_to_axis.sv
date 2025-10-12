@@ -30,10 +30,11 @@ module genaxis_descriptor_to_axis #(
 /*******************************************            DECLARATION      ***********************************************/
 /***********************************************************************************************************************/
 /***********************************************************************************************************************/
-    bit [15:0] packet_length;
-    bit [ID_WIDTH-1:0] packet_channel;
-    bit [31:0] packet_pause;
-    bit [TKEEP_WIDTH-1:0] tkeep_reg;
+    logic   [15:0]              packet_length;
+    logic   [ID_WIDTH-1:0]      packet_channel;
+    logic   [31:0]              packet_pause;
+    logic   [TKEEP_WIDTH-1:0]   tkeep_reg;
+    logic                       tready;
 
     enum bit [1:0] {
         IDLE, 
@@ -69,7 +70,7 @@ module genaxis_descriptor_to_axis #(
             end
 
             BEGIN_TRANSFER: begin
-                if(m_axis_tready_i) begin
+                if(tready) begin
                     if(short_len) begin
                         if(packet_pause == 32'h0) state_next = IDLE;
                         else state_next = PAUSE;
@@ -79,7 +80,7 @@ module genaxis_descriptor_to_axis #(
             end
 
             TRANSFER: begin
-                if(m_axis_tready_i) begin
+                if(tready) begin
                     if(short_len) begin
                         if(packet_pause == 32'h0) state_next = IDLE;
                         else state_next = PAUSE;
@@ -100,7 +101,7 @@ module genaxis_descriptor_to_axis #(
 
     always_ff @ (posedge clk) begin
         if((state == IDLE) && in_descriptor_valid_i) packet_length <= in_descriptor_data_i[15:0];//длина пакета, который необходимо сгенерировать
-        else if(m_axis_tready_i && ((state == BEGIN_TRANSFER) || (state == TRANSFER))) packet_length <= packet_length - 16'(DATA_WIDTH/8);
+        else if(tready && ((state == BEGIN_TRANSFER) || (state == TRANSFER))) packet_length <= packet_length - 16'(DATA_WIDTH/8);
 
         if((state == IDLE) && in_descriptor_valid_i) packet_pause <= in_descriptor_data_i[47:16];
         else if(state == PAUSE) packet_pause <= packet_pause - 32'h1;
@@ -111,7 +112,7 @@ module genaxis_descriptor_to_axis #(
     
     always_ff @ (posedge clk or negedge reset_n) begin
         if(!reset_n) m_axis_tvalid_o <= 1'b0;
-        else if(m_axis_tready_i) begin
+        else if(tready) begin
             m_axis_tvalid_o <= ((state == BEGIN_TRANSFER) || (state == TRANSFER));
         end
     end
@@ -119,7 +120,7 @@ module genaxis_descriptor_to_axis #(
     wire tlast_next = ((state == BEGIN_TRANSFER) || (state == TRANSFER)) & short_len;
 
     always_ff @ (posedge clk) begin
-        if(m_axis_tready_i) begin
+        if(tready) begin
             m_axis_tid_o    <= packet_channel;
             m_axis_tdata_o  <= psrand_data_i;
             m_axis_tlast_o  <= tlast_next;
@@ -127,5 +128,7 @@ module genaxis_descriptor_to_axis #(
         end
     end
 
+
+    assign tready = m_axis_tready_i | ~m_axis_tvalid_o;
 
 endmodule
